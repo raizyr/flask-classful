@@ -241,7 +241,7 @@ class FlaskView(object):
             code, headers = None, None
 
             if isinstance(response, tuple):
-                response, code, headers = unpack(response)
+                response, code, headers = cls.unpacker(response)
 
             if not isinstance(response, ResponseBase):
 
@@ -364,6 +364,30 @@ class FlaskView(object):
         """
         return cls.__name__ + ":{0!s}".format(method_name)
 
+    @classmethod
+    def unpacker(self, value):
+        """
+        Unpack a view response to return a three
+        value tuple of data, code, and headers
+        """
+        if not isinstance(value, tuple):
+            return value, 200, {}
+
+        try:
+            data, code, headers = value
+            return data, code, headers
+        except ValueError:
+            pass
+
+        try:
+            data, code = value
+            return data, code, {}
+        except ValueError:
+            pass
+
+        return value, 200, {}
+
+
 
 def _dashify_uppercase(name):
     """convert somethingWithUppercase into something-with-uppercase"""
@@ -419,25 +443,6 @@ def get_true_argspec(method):
         if true_argspec:
             return true_argspec
 
-
-def unpack(value):
-    """Return a three tuple of data, code, and headers"""
-    if not isinstance(value, tuple):
-        return value, 200, {}
-
-    try:
-        data, code, headers = value
-        return data, code, headers
-    except ValueError:
-        pass
-
-    try:
-        data, code = value
-        return data, code, {}
-    except ValueError:
-        pass
-
-    return value, 200, {}
 
 
 class DecoratorCompatibilityError(Exception):
